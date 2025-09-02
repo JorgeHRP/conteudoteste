@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Conversas{% endblock %}
+{% block content %}
+<div class="row bg-white shadow rounded" style="height:75vh;">
+  <!-- Lista de Chats -->
+  <div class="col-md-4 border-end overflow-auto">
+    <h5 class="p-3 border-bottom">Conversas</h5>
+    <ul class="list-group list-group-flush">
+      {% for chat in chats %}
+        <a href="{{ url_for('conversas') }}?jid={{ chat.jid }}" class="list-group-item list-group-item-action {% if chat.jid == remote_jid %}active{% endif %}">
+          <div class="d-flex align-items-center">
+            <img src="{{ chat.avatar or 'https://via.placeholder.com/40' }}" class="rounded-circle me-2" width="40" height="40">
+            <div>
+              <div class="fw-bold">{{ chat.name }}</div>
+              <small class="text-muted">{{ chat.updatedAt }}</small>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- Mensagens -->
+  <div class="col-md-8 d-flex flex-column">
+    {% if remote_jid %}
+      <div class="border-bottom p-3">
+        <h6 class="m-0">Chat com {{ chats|selectattr("jid", "equalto", remote_jid)|map(attribute="name")|list|first }}</h6>
+      </div>
+      <div class="flex-grow-1 overflow-auto p-3" style="background:#f0f2f5;">
+        {% for m in messages %}
+          <div class="d-flex {% if m.fromMe %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
+            <div class="p-2 rounded {% if m.fromMe %}bg-primary text-white{% else %}bg-light{% endif %}" style="max-width:70%;">
+              {{ m.text }}
+              <div class="small text-muted text-end">{{ m.timestamp }}</div>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-muted">Nenhuma mensagem neste chat.</p>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="d-flex flex-grow-1 justify-content-center align-items-center text-muted">
+        <p>Selecione um chat à esquerda para visualizar as mensagens.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

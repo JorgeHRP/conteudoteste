@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Disparo{% endblock %}
+{% block content %}
+<div class="bg-white p-4 shadow rounded">
+  <h2>📤 Disparo de Mensagens</h2>
+  {% if sucesso %}<div class="alert alert-success">{{ sucesso }}</div>{% endif %}
+  <form method="post" class="mt-3">
+    <div class="mb-3">
+      <label class="form-label">Mensagem</label>
+      <textarea name="mensagem" class="form-control" rows="4" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enviar</button>
+  </form>
+</div>
+{% endblock %}

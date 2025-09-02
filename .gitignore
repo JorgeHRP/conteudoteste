@@ -1,0 +1,41 @@
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.log
+
+# === Virtualenv ===
+.env/
+venv/
+ENV/
+env.bak/
+
+# === IDE / Editor ===
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === Sistema ===
+.DS_Store
+Thumbs.db
+
+# === Arquivos do projeto ===
+# Arquivo de configuração local (não versionar credenciais)
+.env
+.env.local
+.env.*.local
+
+# Pasta de uploads (não queremos mandar arquivos de teste)
+uploads/
+
+# Arquivos de cache do pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# === Produção ===
+# Logs de runtime
+*.log
+gunicorn.pid
