@@ -1,11 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 from supabase import create_client
 from dotenv import load_dotenv
 import os, bcrypt, requests
 from datetime import datetime, timezone
 from werkzeug.utils import secure_filename
-from flask import send_from_directory
-
 
 # -----------------------------
 # Configurações iniciais
@@ -21,11 +19,11 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 BASE_URL = os.getenv("EVOLUTION_BASE_URL", "").rstrip("/")
 INSTANCE = os.getenv("EVOLUTION_INSTANCE")
 API_KEY  = os.getenv("EVOLUTION_API_KEY")
-HEADERS  = {"apikey": API_KEY}
+HEADERS  = {"apikey": API_KEY} if API_KEY else {}
 
 # Flask
 app = Flask(__name__)
-app.secret_key = "segredo-super-seguro"
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 
 # Uploads
 UPLOAD_FOLDER = "uploads"
@@ -63,6 +61,8 @@ def pick_text(msg_obj: dict) -> str:
     )
 
 def get_chats():
+    if not BASE_URL or not INSTANCE or not API_KEY:
+        return []
     url = f"{BASE_URL}/chat/findChats/{INSTANCE}"
     r = requests.post(url, headers=HEADERS, timeout=20)
     r.raise_for_status()
@@ -70,6 +70,8 @@ def get_chats():
     return data if isinstance(data, list) else data.get("chats", [])
 
 def get_messages(remote_jid: str):
+    if not BASE_URL or not INSTANCE or not API_KEY:
+        return []
     url = f"{BASE_URL}/chat/findMessages/{INSTANCE}"
     payload = {"where": {"key": {"remoteJid": remote_jid}}}
     r = requests.post(
@@ -85,18 +87,26 @@ def get_messages(remote_jid: str):
 # -----------------------------
 # Rotas Flask
 # -----------------------------
+@app.route("/healthz")
+def healthz():
+    return {"status": "ok"}, 200
+
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         nome = request.form["nome"]
         senha_digitada = request.form["senha"]
 
-        result = supabase.table("usuarios").select("*").eq("nome", nome).execute()
+        try:
+            result = supabase.table("usuarios").select("*").eq("nome", nome).execute()
+        except Exception:
+            return render_template("login.html", erro="Erro ao conectar ao banco")
+
         if result.data:
             usuario = result.data[0]
-            senha_hash = usuario["senha"]
+            senha_hash = usuario.get("senha", "")
 
-            if bcrypt.checkpw(senha_digitada.encode("utf-8"), senha_hash.encode("utf-8")):
+            if senha_hash and bcrypt.checkpw(senha_digitada.encode("utf-8"), senha_hash.encode("utf-8")):
                 session["usuario"] = usuario["nome"]
                 return redirect(url_for("home"))
 
@@ -164,14 +174,12 @@ def conversas():
         messages=messages,
         remote_jid=remote_jid
     )
-    
 
 @app.route("/uploads/<filename>")
 def download_file(filename):
     if "usuario" not in session:
         return redirect(url_for("login"))
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=True)
-
 
 @app.route("/uploads", methods=["GET", "POST"])
 def uploads():
@@ -246,7 +254,7 @@ def logout():
     return redirect(url_for("login"))
 
 # -----------------------------
-# Run
+# Execução local
 # -----------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8000)), debug=False)
